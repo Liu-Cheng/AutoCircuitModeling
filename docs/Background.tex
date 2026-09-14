@@ -1,109 +1,43 @@
-\section{Background and Related Work}
+\section{Related Work}
 \label{background}
-\subsection{GNN-based EDA Prediction}
-% 定义 EDA GNN predictor，tool-flow labels，surrogate role
-GNN-based EDA prediction aims to approximate expensive tool-derived design properties with learned graph models. 
-Given a design artifact \(d\), such as an HLS program, RTL description, gate-level netlist, or physical layout, an EDA tool flow first produces a realized design state \(s\), and an analysis engine then computes the target property \(y\):
-\begin{equation}
-    s = \mathcal{F}_{\mathrm{impl}}(d;\tau), 
-    \qquad
-    y = \mathcal{A}_{\mathrm{eda}}(s;\tau),
-\end{equation}
-where \(\mathcal{F}_{\mathrm{impl}}\) denotes implementation or optimization steps, 
-\(\mathcal{A}_{\mathrm{eda}}\) denotes an EDA analysis procedure, and \(\tau\) denotes tool, technology, and constraint settings. 
-A GNN predictor approximates this tool-derived mapping by first converting the available design artifact into a graph:
-\begin{equation}
-    G = \phi(d) = (V, E, X_V, X_E),
-\end{equation}
-where \(V\), \(E\), \(X_V\), and \(X_E\) denote design objects, dependencies, node features, and edge features, respectively. 
-The predictor then estimates the EDA property as
-\begin{equation}
-    \hat{y} = f_{\theta}(G),
-    \qquad
-    \theta^\star = \arg\min_{\theta} 
-    \sum_{i} \mathcal{L}\big(f_{\theta}(\phi(d_i)), y_i\big).
-\end{equation}
-Depending on the task, \(y\) may correspond to graph-level PPA, endpoint-level timing, cell-level congestion, path-level criticality, or other EDA properties.
 
-Although this formulation appears uniform, its concrete instantiation varies substantially across EDA tasks. The graph may expose high-level operations, RTL signals, logic gates, pins, nets, placement grids, or physical regions; the edges may encode dataflow, control dependence, logical connectivity, timing arcs, or spatial coupling; and the prediction target may correspond to node-level, edge-level, path-level, or graph-level quantities. Prior surveys also describe GNN-based circuit modeling through a common pipeline of graph construction, feature encoding, message passing, and task-specific prediction, while emphasizing that these stages vary significantly across circuit abstraction levels and target properties. This task dependence motivates the semantic co-design perspective introduced next.
+AI-for-EDA (AI4EDA) uses learned models to support circuit analysis and optimization, including power, performance, and area estimation, timing prediction, and routability assessment. Predictors trained on circuit descriptions and tool-generated measurements can provide early feedback before expensive downstream analysis. The development of these predictors has progressively expanded from fitting models to engineered features, through learning circuit representations, to automating model design and experimentation. These approaches remain complementary; the progression highlights how the scope of automation has grown and which modeling decisions still require human expertise.
 
+\subsection{Feature Engineering and Traditional Machine Learning}
+\label{sec:feature_based_modeling}
 
+Early learning-based circuit models typically started from a clearly specified prediction problem and a set of features selected by domain experts. Designers summarized relevant properties, such as switching activity, resource counts, or timing statistics, and fitted statistical or machine-learning models to the resulting feature vectors. Regression-based RTL power modeling by Bogliolo et al.~\cite{bogliolo2000regression}, for example, used linear regression and nonparametric extensions to relate power dissipation to input and output activity. For HLS, Dai et al.~\cite{dai2018fast} extracted features from synthesis reports and compared predictive models for estimating post-implementation quality of results.
 
+These methods established the value of inexpensive learned approximations to EDA analyses. Their effectiveness nevertheless depended strongly on the information retained by the feature extractor. Once a circuit had been reduced to a fixed feature vector, the learner could exploit relationships among those features but could not recover omitted structural dependencies. Improving the predictor therefore often required an engineer to reconsider the feature set using knowledge of both the target EDA analysis and the learning method.
 
-\subsection{Semantic Co-Design in EDA-Native GNNs}
+\subsection{Deep Learning for Circuit Prediction}
+\label{sec:deep_circuit_modeling}
+
+Deep learning shifted part of this effort from manually specifying feature interactions to learning them through neural architectures. Fully connected networks can learn nonlinear mappings from circuit descriptors, while convolutional neural networks (CNNs) can exploit spatial regularity in layout-derived inputs. RouteNet~\cite{xie2018routenet} illustrates the latter approach: it represents placement information as image-like inputs and applies CNNs to predict overall routability and design-rule-checking hotspots. This formulation connects the spatial structure of the prediction problem with an architecture suited to processing it.
+
+Learned representations expanded the range of relationships that a predictor could capture, but model development still required substantial manual choices about input encoding, network architecture, training data, and optimization. A layout image is useful for spatial effects, whereas circuit connectivity need not follow proximity on that image. Likewise, a fully connected network operating on aggregate descriptors does not explicitly expose relationships between individual circuit elements. These limitations motivated models that process circuit structure more directly, alongside continued use of CNNs for spatial prediction tasks.
+
+\subsection{Graph Neural Networks and Circuit-Specific Model Design}
 \label{sec:semantic_codesign}
-% 核心：按 L1/L2/L3 重组已有 EDA GNN 工作
-% 不按 HLS/RTL/Netlist 罗列
 
-Prior EDA GNN studies are often organized by circuit abstraction levels, such as HLS, RTL, netlist, or physical layout. In this work, we instead organize them by which part of the graph-learning formulation is redesigned to match the target EDA analysis. As summarized in Table~\ref{tab:semantic_codesign}, existing EDA-native GNNs repeatedly introduce task semantics at three levels: representation, computation, and learning signal. These levels are not mutually exclusive; many strong predictors combine multiple levels, suggesting that progress in EDA GNNs is often driven by semantic co-design rather than isolated backbone replacement. A more complete taxonomy is provided in Appendix~\ref{app:taxonomy}.
+GNNs provide a natural representation for irregular circuit structures by treating operations, gates, pins, or other design objects as nodes and their dependencies as edges~\cite{lopera2021survey}. Compared with flattening a design into a fixed vector or rasterizing it onto a grid, graph-based modeling can explicitly retain connectivity and propagate information along task-relevant relations. Representative work spans HLS program graphs, netlist timing graphs, and logic representations, showing that the graph abstraction and learning procedure must be adapted to the property being predicted.
 
-\begin{table*}[t]
-\centering
-\caption{Semantic co-design levels in representative EDA-native GNNs.}
-\label{tab:semantic_codesign}
-\small
-\begin{tabular}{p{0.16\textwidth} p{0.30\textwidth} p{0.46\textwidth}}
-\toprule
-\textbf{Level} & \textbf{Design focus} & \textbf{Representative works} \\
-\midrule
-L1: Representation 
-& What EDA objects and dependencies are exposed to the model?
-& GNN-DSE~\cite{sohrabizadeh2022automated}, 
-HARP~\cite{sohrabizadeh2023robust}, 
-Balor~\cite{murphy2024balor}, 
-MasterRTL~\cite{fang2023masterrtl}, 
-RTL-Timer~\cite{fang2024annotating}, 
-DeepGate2~\cite{shi2023deepgate2}, 
-TimingGCN~\cite{guo2022timing}, 
-LHNN~\cite{wang2022lhnn}, 
-RoutePlacer~\cite{hou2024routeplacer} \\
-\midrule
-L2: Computation 
-& How does task-relevant information propagate?
-& D-SAGE~\cite{ustun2020accurate}, 
-PowerGear~\cite{lin2022powergear}, 
-GRANNITE~\cite{zhang2020grannite}, 
-FGNN~\cite{wang2022functionality}, 
-TimingGCN~\cite{guo2022timing}, 
-LHNN~\cite{wang2022lhnn}, 
-RoutePlacer~\cite{hou2024routeplacer} \\
-\midrule
-L3: Learning signal 
-& What EDA semantics supervise the learned representation?
-& RTL-Timer~\cite{fang2024annotating}, 
-RTLDistil~\cite{wangbridging}, 
-StructRTL~\cite{liu2025beyond}, 
-DeepGate2~\cite{shi2023deepgate2}, 
-compareXplore~\cite{bai2024learning}, 
-PreRoutGNN~\cite{zhong2024preroutgnn}, 
-RoutePlacer~\cite{hou2024routeplacer} \\
-\bottomrule
-\end{tabular}
-\end{table*}
+The existing literature illustrates three coupled dimensions of this adaptation. \emph{Representation (L1)} determines which circuit objects, relations, and features are visible to the model. GNN-DSE~\cite{sohrabizadeh2022automated} and Balor~\cite{murphy2024balor} develop graph-based HLS predictors, with Balor combining custom source-code graphs and hierarchical GNNs. \emph{Computation (L2)} determines how information is propagated and combined. PowerGear~\cite{lin2022powergear} uses a heterogeneous edge-centric GNN for power estimation, while the timing-engine-inspired model of Guo et al.~\cite{guo2022timing} structures prediction around timing propagation. \emph{Learning signal (L3)} determines the objectives and supervision used to train the representation. Guo et al. use local edge-delay prediction as auxiliary supervision, and DeepGate2~\cite{shi2023deepgate2} uses differences between sampled gates' truth tables to teach circuit functionality. These dimensions overlap: an effective improvement may require coordinated changes to the graph, the computation, and the training objective.
 
-At the representation level, prior works redesign graph abstractions to expose task-relevant EDA objects and dependencies, such as program directives, RTL operators, logic functions, timing paths, or physical-layout interactions. At the computation level, they modify message passing, update order, or readout so that information flow better matches EDA analysis rules, such as directed dataflow, toggle propagation, logic composition, STA-like timing propagation, or spatial interaction modeling. At the learning-signal level, they introduce intermediate quantities, auxiliary objectives, distillation, ranking signals, or differentiable EDA losses to guide the learned representation toward task-relevant semantics. These patterns show that many EDA GNN improvements are not merely choices of neural primitives, but manually designed hypotheses about how an EDA property should be exposed, propagated, and learned. HEDGE builds on this observation by treating representation, computation, and learning signal as explicit semantic levels for agentic exploration.
+Thus, graph structure makes circuit information more accessible to a learner, but it also introduces additional modeling decisions. Engineers must construct appropriate graphs and datasets, choose node and edge attributes, design propagation and readout mechanisms, and select training objectives that reflect the target analysis. Data generation and labeling further depend on EDA tools and design constraints. Successful model development consequently draws on both machine-learning expertise and an understanding of circuits and EDA, motivating automation beyond parameter fitting alone.
 
-
-
-\subsection{Automated GNN Design and Its Limits}
+\subsection{Neural Architecture Search and Automated Model Selection}
 \label{sec:automated_gnn_design}
-% GNN-NAS / AutoML / HPO
-% 说明它们搜索固定 primitive，难以覆盖 task-level modeling hypotheses
 
-Automated GNN design aims to reduce manual architecture engineering by searching over predefined model and training choices. Existing GNN-NAS and AutoML methods typically optimize choices such as message-passing operator, aggregation function, hidden dimension, depth, normalization, skip connection, pooling/readout, or training hyperparameters~\cite{gao2019graphnas,zhou2019auto,you2020design}. These methods are effective when the graph-learning formulation is already fixed: the input graph has been constructed, node and edge features have been defined, the prediction target is known, and the learning objective is specified. In this setting, automated design answers the question: given this graph-learning problem, which neural architecture or training configuration works best?
+Neural architecture search (NAS) reduces the effort of manually selecting neural components by optimizing their combinations within a specified design space. Chang et al.~\cite{chang2020automatic} apply NAS to routability predictor development, providing an EDA-specific example of automated architecture construction. For graph learning, GraphNAS~\cite{gao2019graphnas} and Auto-GNN~\cite{zhou2022auto} use reinforcement-learning-based search to select GNN architectures, while the systematic design-space study of You et al.~\cite{you2020design} examines architectural and training choices across graph-learning tasks. These efforts make it easier to obtain competitive configurations without manually testing each candidate.
 
-EDA-native GNN design requires automation before model selection. The design variables are not only neural primitives, but also formulation choices: what the graph represents, how information propagates, and what semantic signals supervise learning. These choices are task-dependent and mutually coupled, so encoding them as NAS primitives would require experts to predefine the hypotheses that automation is supposed to discover. The limitation is therefore a level mismatch: existing automated GNN design optimizes within a fixed graph-learning formulation, whereas semantic co-design requires searching over the formulation itself. This motivates a more open mechanism capable of proposing and implementing task-level modeling hypotheses.
+The remaining boundary is the design space itself. Available operators, connectivity patterns, and tunable settings must be represented in the search procedure, which evaluates candidates against a prescribed performance objective. The amount of manual architecture exploration is reduced, but experts still define the circuit representation, permissible transformations, and often the learning objective. If validation errors reveal a missing circuit relation or an unsuitable propagation rule, a fixed-space search can address that limitation only when the relevant change is already expressible. Automating this further step requires interpreting the model's behavior and creating new modeling strategies, rather than only selecting among encoded alternatives.
 
-\subsection{LLM Agents for Open-Ended Model Exploration}
+\subsection{LLM Agents and Autonomous Circuit Modeling}
 \label{sec:llm_agents}
-% 说明 LLM agents 的潜力与风险
-% 引出 HEDGE 的 protocol-grounded exploration
 
-Recent LLM-based research agents have shown the potential of automating parts of the research loop, including idea generation, code modification, experiment execution, and result tracking~\cite{lu2024aiscientist,karpathy2026autoresearch,jin2026arbor}. 
-These systems demonstrate that LLM agents can explore open-ended design spaces beyond fixed search operators. 
-However, for EDA-native GNN design, open-ended generation alone is insufficient: a generated variant must correspond to a grounded EDA modeling hypothesis, and its measured improvement must be attributable to that hypothesis rather than to uncontrolled changes in data processing, training settings, or evaluation protocols.
+LLM-based research systems extend automation to proposing changes, editing code, running experiments, and interpreting results. The AI Scientist~\cite{lu2024aiscientist} connects idea generation with implementation, experimentation, and scientific reporting. AutoResearch~\cite{karpathy2026autoresearch} focuses on iterative modification and evaluation of language-model training code. Arbor~\cite{jin2026arbor} organizes autonomous research around a persistent tree of proposals, artifacts, evidence, and accumulated insights. These systems demonstrate mechanisms for carrying experimental findings into subsequent attempts and reducing repeated human intervention in the development loop.
 
-HEDGE is therefore different from general-purpose autonomous research frameworks.
-It does not aim to automate arbitrary scientific discovery; instead, it restricts agentic exploration to semantic co-design for EDA GNNs. 
-The agent searches over representation, computation, and learning-signal hypotheses, while the framework records each candidate through a controlled design trace for comparison, replay, and attribution. 
-This protocol-grounded view allows HEDGE to preserve the flexibility of LLM agents without reducing the process to unstructured trial-and-error.
+Circuit modeling benefits from these capabilities, but useful feedback must also reflect the EDA problem being learned. An aggregate validation score establishes whether a predictor improves under the selected metric; additional circuit-specific analysis can help explain where it fails and what to change. For example, timing errors can be examined by path depth or cell type to investigate deficiencies in information propagation, while resource-prediction errors can be related to operation types or synthesis transformations. Such diagnostics turn circuit knowledge into evidence that can guide changes to representations, architectures, or training objectives. They complement general observations about convergence, capacity, and optimization with information about the physical or logical relationships the model is intended to capture.
+
+CircuitModelPilot builds on the emerging autonomous-research workflow with this circuit-modeling focus. It uses task descriptions, circuit knowledge, and experimental feedback to analyze the current model, propose a revised modeling strategy, generate its implementation, and test the result. A model-design search tree retains alternative candidates and their outcomes so that later iterations can extend useful directions and reconsider unsuccessful ones. Relative to fixed-space NAS, the framework can introduce implementations that were not enumerated beforehand; relative to general research or training agents, its emphasis is on using EDA-specific evidence to make modeling revisions more targeted. The goal is to reduce the combined AI and EDA engineering effort needed to develop task-specific predictors and advance toward autonomous circuit modeling.
