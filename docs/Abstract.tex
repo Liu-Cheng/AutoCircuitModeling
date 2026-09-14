@@ -1,0 +1,10 @@
+\section{Abstract}
+\label{Abstract}
+
+\begin{abstract}
+
+Effective GNN predictors for electronic design automation (EDA) often require more than choosing a strong neural backbone: their learning formulation must be grounded in how the target EDA analysis operates. Automating such design therefore requires exploring task-level modeling hypotheses beyond the fixed search spaces of conventional GNN-NAS. While LLM agents provide a natural mechanism for such open-ended exploration, directly using them for EDA GNN research faces two fundamental challenges. First, a \textit{hypothesis-grounding gap} causes agents to favor generic architecture or training tweaks over hypotheses rooted in EDA objects, dependencies, and analysis semantics. Second, \textit{unreliable long-horizon execution} makes iterative hypothesis formulation, implementation, experimentation, and refinement vulnerable to context drift, uncontrolled code changes, and protocol violations.
+We present \textbf{\sysname}, a hypothesis-driven auto-research harness for EDA-native GNN exploration. To address the grounding challenge, \sysname structures candidate hypotheses through \textit{semantic co-design}, organizing them across representation, computation, and learning signal so that each candidate corresponds to an explicit EDA modeling rationale. To address the execution challenge, \sysname organizes exploration as a \textit{hypothesis tree}, where each node represents a hypothesis-backed design state and each edge represents a controlled refinement. A scoped experimental protocol binds each hypothesis to its implementation scope, training configuration, evaluation result, and lineage, enabling systematic branching, replay, comparison, and evidence attribution. Experiments on HLS resource prediction, netlist-level timing prediction, and RTL-to-netlist timing prediction show that \sysname discovers accurate and reproducible EDA-native GNN designs beyond conventional GNN-NAS spaces.
+
+
+\end{abstract}

@@ -1,0 +1,109 @@
+\section{Background and Related Work}
+\label{background}
+\subsection{GNN-based EDA Prediction}
+% 定义 EDA GNN predictor，tool-flow labels，surrogate role
+GNN-based EDA prediction aims to approximate expensive tool-derived design properties with learned graph models. 
+Given a design artifact \(d\), such as an HLS program, RTL description, gate-level netlist, or physical layout, an EDA tool flow first produces a realized design state \(s\), and an analysis engine then computes the target property \(y\):
+\begin{equation}
+    s = \mathcal{F}_{\mathrm{impl}}(d;\tau), 
+    \qquad
+    y = \mathcal{A}_{\mathrm{eda}}(s;\tau),
+\end{equation}
+where \(\mathcal{F}_{\mathrm{impl}}\) denotes implementation or optimization steps, 
+\(\mathcal{A}_{\mathrm{eda}}\) denotes an EDA analysis procedure, and \(\tau\) denotes tool, technology, and constraint settings. 
+A GNN predictor approximates this tool-derived mapping by first converting the available design artifact into a graph:
+\begin{equation}
+    G = \phi(d) = (V, E, X_V, X_E),
+\end{equation}
+where \(V\), \(E\), \(X_V\), and \(X_E\) denote design objects, dependencies, node features, and edge features, respectively. 
+The predictor then estimates the EDA property as
+\begin{equation}
+    \hat{y} = f_{\theta}(G),
+    \qquad
+    \theta^\star = \arg\min_{\theta} 
+    \sum_{i} \mathcal{L}\big(f_{\theta}(\phi(d_i)), y_i\big).
+\end{equation}
+Depending on the task, \(y\) may correspond to graph-level PPA, endpoint-level timing, cell-level congestion, path-level criticality, or other EDA properties.
+
+Although this formulation appears uniform, its concrete instantiation varies substantially across EDA tasks. The graph may expose high-level operations, RTL signals, logic gates, pins, nets, placement grids, or physical regions; the edges may encode dataflow, control dependence, logical connectivity, timing arcs, or spatial coupling; and the prediction target may correspond to node-level, edge-level, path-level, or graph-level quantities. Prior surveys also describe GNN-based circuit modeling through a common pipeline of graph construction, feature encoding, message passing, and task-specific prediction, while emphasizing that these stages vary significantly across circuit abstraction levels and target properties. This task dependence motivates the semantic co-design perspective introduced next.
+
+
+
+
+\subsection{Semantic Co-Design in EDA-Native GNNs}
+\label{sec:semantic_codesign}
+% 核心：按 L1/L2/L3 重组已有 EDA GNN 工作
+% 不按 HLS/RTL/Netlist 罗列
+
+Prior EDA GNN studies are often organized by circuit abstraction levels, such as HLS, RTL, netlist, or physical layout. In this work, we instead organize them by which part of the graph-learning formulation is redesigned to match the target EDA analysis. As summarized in Table~\ref{tab:semantic_codesign}, existing EDA-native GNNs repeatedly introduce task semantics at three levels: representation, computation, and learning signal. These levels are not mutually exclusive; many strong predictors combine multiple levels, suggesting that progress in EDA GNNs is often driven by semantic co-design rather than isolated backbone replacement. A more complete taxonomy is provided in Appendix~\ref{app:taxonomy}.
+
+\begin{table*}[t]
+\centering
+\caption{Semantic co-design levels in representative EDA-native GNNs.}
+\label{tab:semantic_codesign}
+\small
+\begin{tabular}{p{0.16\textwidth} p{0.30\textwidth} p{0.46\textwidth}}
+\toprule
+\textbf{Level} & \textbf{Design focus} & \textbf{Representative works} \\
+\midrule
+L1: Representation 
+& What EDA objects and dependencies are exposed to the model?
+& GNN-DSE~\cite{sohrabizadeh2022automated}, 
+HARP~\cite{sohrabizadeh2023robust}, 
+Balor~\cite{murphy2024balor}, 
+MasterRTL~\cite{fang2023masterrtl}, 
+RTL-Timer~\cite{fang2024annotating}, 
+DeepGate2~\cite{shi2023deepgate2}, 
+TimingGCN~\cite{guo2022timing}, 
+LHNN~\cite{wang2022lhnn}, 
+RoutePlacer~\cite{hou2024routeplacer} \\
+\midrule
+L2: Computation 
+& How does task-relevant information propagate?
+& D-SAGE~\cite{ustun2020accurate}, 
+PowerGear~\cite{lin2022powergear}, 
+GRANNITE~\cite{zhang2020grannite}, 
+FGNN~\cite{wang2022functionality}, 
+TimingGCN~\cite{guo2022timing}, 
+LHNN~\cite{wang2022lhnn}, 
+RoutePlacer~\cite{hou2024routeplacer} \\
+\midrule
+L3: Learning signal 
+& What EDA semantics supervise the learned representation?
+& RTL-Timer~\cite{fang2024annotating}, 
+RTLDistil~\cite{wangbridging}, 
+StructRTL~\cite{liu2025beyond}, 
+DeepGate2~\cite{shi2023deepgate2}, 
+compareXplore~\cite{bai2024learning}, 
+PreRoutGNN~\cite{zhong2024preroutgnn}, 
+RoutePlacer~\cite{hou2024routeplacer} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+At the representation level, prior works redesign graph abstractions to expose task-relevant EDA objects and dependencies, such as program directives, RTL operators, logic functions, timing paths, or physical-layout interactions. At the computation level, they modify message passing, update order, or readout so that information flow better matches EDA analysis rules, such as directed dataflow, toggle propagation, logic composition, STA-like timing propagation, or spatial interaction modeling. At the learning-signal level, they introduce intermediate quantities, auxiliary objectives, distillation, ranking signals, or differentiable EDA losses to guide the learned representation toward task-relevant semantics. These patterns show that many EDA GNN improvements are not merely choices of neural primitives, but manually designed hypotheses about how an EDA property should be exposed, propagated, and learned. SCOPE builds on this observation by treating representation, computation, and learning signal as explicit semantic levels for agentic exploration.
+
+
+
+\subsection{Automated GNN Design and Its Limits}
+\label{sec:automated_gnn_design}
+% GNN-NAS / AutoML / HPO
+% 说明它们搜索固定 primitive，难以覆盖 task-level modeling hypotheses
+
+Automated GNN design aims to reduce manual architecture engineering by searching over predefined model and training choices. Existing GNN-NAS and AutoML methods typically optimize choices such as message-passing operator, aggregation function, hidden dimension, depth, normalization, skip connection, pooling/readout, or training hyperparameters~\cite{gao2019graphnas,zhou2019auto,you2020design}. These methods are effective when the graph-learning formulation is already fixed: the input graph has been constructed, node and edge features have been defined, the prediction target is known, and the learning objective is specified. In this setting, automated design answers the question: given this graph-learning problem, which neural architecture or training configuration works best?
+
+EDA-native GNN design requires automation before model selection. The design variables are not only neural primitives, but also formulation choices: what the graph represents, how information propagates, and what semantic signals supervise learning. These choices are task-dependent and mutually coupled, so encoding them as NAS primitives would require experts to predefine the hypotheses that automation is supposed to discover. The limitation is therefore a level mismatch: existing automated GNN design optimizes within a fixed graph-learning formulation, whereas semantic co-design requires searching over the formulation itself. This motivates a more open mechanism capable of proposing and implementing task-level modeling hypotheses.
+
+\subsection{LLM Agents for Open-Ended Model Exploration}
+\label{sec:llm_agents}
+% 说明 LLM agents 的潜力与风险
+% 引出 SCOPE 的 protocol-grounded exploration
+
+Recent LLM-based research agents have shown the potential of automating parts of the research loop, including idea generation, code modification, experiment execution, and result tracking~\cite{lu2024aiscientist,karpathy2026autoresearch,jin2026arbor}. 
+These systems demonstrate that LLM agents can explore open-ended design spaces beyond fixed search operators. 
+However, for EDA-native GNN design, open-ended generation alone is insufficient: a generated variant must correspond to a grounded EDA modeling hypothesis, and its measured improvement must be attributable to that hypothesis rather than to uncontrolled changes in data processing, training settings, or evaluation protocols.
+
+SCOPE is therefore different from general-purpose autonomous research frameworks. 
+It does not aim to automate arbitrary scientific discovery; instead, it restricts agentic exploration to semantic co-design for EDA GNNs. 
+The agent searches over representation, computation, and learning-signal hypotheses, while the framework records each candidate through a controlled design trace for comparison, replay, and attribution. 
+This protocol-grounded view allows SCOPE to preserve the flexibility of LLM agents without reducing the process to unstructured trial-and-error.

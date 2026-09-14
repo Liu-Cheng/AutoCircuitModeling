@@ -1,0 +1,78 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage[caption=false,font=footnotesize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{makecell}
+\usepackage{arydshln}
+\usepackage{xspace}
+\usepackage{xcolor}
+% Framework name
+
+
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+% updated with editorial comments 8/9/2021
+
+\newcommand{\sysname}{\textsc{HEDGE}\xspace}
+
+\begin{document}
+
+\title{\sysname: Trace-Guided Discovery of EDA-Native GNN Design}
+
+\author{todo, 
+        todo, ~\IEEEmembership{Member,~IEEE,} 
+        
+\thanks{All authors are with the State Key Lab of Processors, Institute of Computing Technology, Chinese Academy of Sciences (CAS), Beijing, China. XXX, XXX, XXX, XXX, and XXX are also with the University of Chinese Academy of Sciences, Beijing, China.}
+}
+
+
+
+% The paper headers
+\markboth{Journal of \LaTeX\ Class Files,~Vol.~14, No.~8, August~2021}%
+{Shell \MakeLowercase{\textit{et al.}}: A Sample Article Using IEEEtran.cls for IEEE Journals}
+
+
+% Remember, if you use this you must call \IEEEpubidadjcol in the second
+% column for its text to clear the IEEEpubid mark.
+
+\maketitle
+
+
+
+
+\input{docs/Abstract}
+
+
+\begin{IEEEkeywords}
+Electronic Design Automation (EDA), Graph Neural Networks (GNNs), Automated Research, LLM Agents
+\end{IEEEkeywords}
+
+\input{docs/Introduction}
+\input{docs/Background}
+\input{docs/Framework}
+\input{docs/Experiments}
+\input{docs/Conclusions}
+
+
+% \section*{Acknowledgments}
+% The authors used Google Gemini 3.1 Pro to polish the manuscript's text, and GPT-5 for code completion and debugging suggestions. All core ideas, methodologies, and scientific conclusions are entirely the original work of the authors, who have thoroughly reviewed all AI-assisted outputs and take full responsibility for the final content.
+
+\bibliographystyle{IEEEtran}
+% \balance
+\bibliography{ref}
+% \printbibliography
+
+
+
+\end{document}
+
+

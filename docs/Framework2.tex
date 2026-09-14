@@ -1,0 +1,149 @@
+\section{Framework}
+\label{framework}
+
+This section presents \sysname, a hypothesis-driven AutoResearch harness for discovering EDA-native GNN designs beyond a fixed neural architecture search space. \sysname treats automated model design as a sequence of falsifiable \emph{EDA modeling hypotheses}, rather than as a sequence of unconstrained code edits. Each hypothesis specifies an EDA mechanism, its intended semantic level(s), an expected observation, and a falsification condition. The framework realizes the hypothesis within a trace-local scope, validates the hypothesis and implementation together, executes it under a comparable research context, and records validation and fixed-test evidence as a design trace. Completed traces become structured research memory for subsequent exploration.
+
+\subsection{Problem Formulation and Design Goals}
+\label{sec:problem_formulation}
+
+\subsubsection{From Architecture Search to Semantic Co-Design}
+
+As defined in Section~\ref{sec:semantic_codesign}, an EDA predictor is determined not only by a GNN backbone, but also by how the target analysis is represented and learned. We represent one graph-learning formulation by
+\begin{equation}
+    \mathcal{C}=(\phi,\psi,\Omega),
+    \label{eq:codesign_tuple}
+\end{equation}
+where $\phi$ denotes the \emph{representation} that maps a design artifact to graph objects, relations, and features; $\psi$ denotes the \emph{computation} that propagates and aggregates task-relevant information; and $\Omega$ denotes the \emph{learning signal}, including the prediction objective, auxiliary supervision, and task-aware training constraints. These components correspond to the L1--L3 semantic levels introduced in Section~\ref{sec:semantic_codesign}.
+
+Conventional GNN-NAS typically searches a predefined space of architectures and training configurations while the graph representation and learning objective are fixed. In contrast, EDA-native design may require changing the formulation itself: for example, introducing a timing-relevant relation at L1, implementing directed delay propagation at L2, or adding intermediate resource supervision at L3. Such mechanisms cannot be exhaustively expressed as a closed list of generic NAS operators. We therefore formulate semantic exploration as
+\begin{equation}
+    \mathcal{C}^{\star}=\arg\max_{\mathcal{C}\in\mathcal{S}_{\mathrm{sem}}}
+    Q(\mathcal{C};\kappa),
+    \label{eq:semantic_search}
+\end{equation}
+where $Q$ is a validation objective and $\mathcal{S}_{\mathrm{sem}}$ is an open candidate space constructed from language-level modeling hypotheses. The goal is not to enumerate arbitrary patches, but to introduce a candidate only when its modification corresponds to an explicit EDA mechanism and can be evaluated under a controlled protocol.
+
+\subsubsection{Research Context and Comparability}
+
+Open-ended exploration is meaningful only when candidate-parent comparisons remain comparable. Before a trace is created, \sysname resolves a research context
+\begin{equation}
+    \kappa=(\mathcal{D},\mathcal{Z},m,\delta,\ell,B,\Sigma,\Pi),
+    \label{eq:research_context}
+\end{equation}
+where $\mathcal{D}$ specifies the domain and target, $\mathcal{Z}$ denotes the dataset and split, $m$ and $\delta\in\{\min,\max\}$ specify the selection metric and its direction, $\ell$ is the loss, $B$ is the training budget, $\Sigma$ is the seed set, and $\Pi$ is the evaluation protocol. In the implementation, the context also records split identity and checksum, epoch budget, execution mode, and protocol version. The validator rejects a trace whose task, dataset, metric semantics, loss, seed policy, or context fields conflict with the candidate proposal.
+
+The framework has four design goals. \emph{Open-ended discovery} permits mechanisms absent from an initial primitive set. \emph{Hypothesis grounding} requires a proposal to refer to concrete EDA objects and analysis rules rather than generic tuning. \emph{Evidence attribution} binds the measured outcome to an explicit intervention under a stable comparison boundary. Finally, \emph{research continuity} stores prior successes, failures, and constraints as structured trace memory instead of relying on an unbounded interaction history.
+
+\subsection{Framework Overview}
+\label{sec:framework_overview}
+
+Figure~\ref{fig:framework} illustrates one HEDGE research cycle. Given an active context $\kappa$ and completed trace memory $\mathcal{M}_t=\{T_0,\ldots,T_t\}$, a proposer selects a comparable parent, authors one hypothesis card, and creates a trace-local implementation. One independent Candidate Reviewer then evaluates EDA grounding and bidirectional alignment between the card and the exact code/configuration delta. The runtime validates the workspace contracts and executes the candidate. Each run selects a checkpoint on validation and evaluates that checkpoint on the fixed test split. Finally, a result analyst receives the validation-and-test evidence bundle, records the outcome, and recommends the next action. The completed trace is appended to $\mathcal{M}_t$ and can be extended, ablated, pruned, or used as the root of a new branch.
+
+This decomposition separates three decisions that are easily conflated in a bare-LLM loop: \emph{what} mechanism should be tested, \emph{how} it is implemented, and \emph{what} the resulting evidence implies. The workflow specification requires the Candidate Reviewer and result analyst to use fresh contexts distinct from the proposer; the runtime verifies their recorded agent identifiers and review fingerprints. This separation is procedural rather than a claim of statistical independence between model outputs.
+
+\begin{algorithm}[t]
+\caption{Hypothesis-Driven Exploration in \sysname}
+\label{alg:hedge_loop}
+\begin{algorithmic}[1]
+\REQUIRE Research context $\kappa$, initial trace $T_0$, search budget $N$
+\STATE $\mathcal{M}\leftarrow\{T_0\}$
+\FOR{$t=0$ to $N-1$}
+    \STATE Inspect comparable completed traces in $\mathcal{M}$ and choose parent $T_p$
+    \STATE Form a structured hypothesis card $H\leftarrow\pi(\kappa,\mathcal{M},T_p)$
+    \STATE Author a trace-local candidate delta $\Delta$ within the declared scope
+    \STATE Review EDA grounding and alignment between $H$ and $\Delta$
+    \IF{candidate review or workspace validation fails}
+        \STATE repair without changing $H$, or create a new trace; \textbf{continue}
+    \ENDIF
+    \STATE Execute the candidate under $\kappa$
+    \STATE Analyze validation-and-test evidence; record outcome and next action
+    \STATE Append $T=(T_p,H,\Delta,C,E,A)$ to $\mathcal{M}$
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Protocol-Grounded Semantic Hypothesis Formation}
+\label{sec:hypothesis_protocol}
+
+\subsubsection{Structured Hypothesis Card}
+
+One trace represents one coherent research decision. A hypothesis may require several coordinated edits, such as a new relation representation and its compatible message-passing operator, but it may not bundle unrelated model changes, generic hyperparameter tuning, and data-processing changes into one claimed intervention. This restriction makes later evidence interpretable.
+
+Each protocol trace begins with a structured hypothesis card
+\begin{equation}
+H_i=(M_i,R_i,O_i,A_i,L_i,E_i,F_i,S_i,V_i,P_i),
+\label{eq:hypothesis_card}
+\end{equation}
+where $M_i$ is the task mechanism, $R_i$ the modeling rationale, $O_i$ the concrete EDA objects, $A_i$ the relevant analysis rule, $L_i\subseteq\{\mathrm{L1},\mathrm{L2},\mathrm{L3}\}$ the intended semantic levels, $E_i$ the expected effect and observations, $F_i$ a falsification condition, $S_i$ the permitted implementation scope, $V_i$ the controlled variables, and $P_i$ validation evidence inherited from the parent trace. For child traces, the runtime requires $P_i$ to cite the actual parent and its validation evidence. Fixed-test evidence is recorded after validation checkpoint selection and is available to trace comparison and result analysis, but it is never used to train model parameters.
+
+The card transforms a free-form idea into a research object. ``Use a deeper GNN'' identifies neither an EDA mechanism nor an observable consequence. In contrast, a timing hypothesis may state that arrival-time information accumulates along directed timing dependencies, that symmetric propagation underrepresents this mechanism, that a direction-aware update should reduce error at deep endpoints, and that it is falsified if this diagnostic does not improve under a controlled comparison. The former is generic tuning; the latter can be reviewed against both code and evidence.
+
+The L1--L3 labels play two complementary roles. The card declares the \emph{intended} semantic level(s) before implementation. After execution, HEDGE also derives \emph{realized} levels from the changed trace-local artifacts: graph transformation code corresponds to L1, model or convolution code to L2, and trainer code to L3. This post-hoc label is a retrieval and attribution signal; it does not replace the prior review of the stated mechanism.
+
+\subsubsection{Candidate Review}
+
+After a trace-local candidate is authored, one independent Candidate Reviewer examines both the hypothesis card and the exact candidate diff/configuration. It accepts a candidate only when the card names concrete EDA objects, references an EDA analysis rule, provides a causal mechanism, and is not merely generic hyperparameter tuning. The same review requires implementation evidence for every claimed mechanism, no undeclared behavioral change or confounder, no generic parameter change presented as the intervention, and no scope violation. The accepted review records the reviewer role and identifier, its verdict, criterion-level checks, and SHA-256 fingerprints for both the canonical hypothesis card and the implementation. The validator recomputes both fingerprints before execution; modifying either the card or comparison-relevant implementation invalidates the approval.
+
+\subsection{Scoped Candidate Realization and Validation}
+\label{sec:scoped_realization}
+
+Open-ended code generation creates an attribution risk: a candidate can appear superior because it changed preprocessing, evaluation, seeds, or shared infrastructure rather than the stated EDA mechanism. HEDGE separates trace-local editable artifacts from protected comparison-critical components. Let $\mathcal{S}_{\mathrm{edit}}$ denote the declared candidate scope and $\mathcal{S}_{\mathrm{prot}}$ the shared framework, task interface, dataset definition, and evaluation logic. A valid candidate delta obeys
+\begin{equation}
+    \Delta_i\subseteq\mathcal{S}_{\mathrm{edit}},\qquad
+    \Delta_i\cap\mathcal{S}_{\mathrm{prot}}=\emptyset.
+    \label{eq:edit_scope}
+\end{equation}
+
+In the implementation, each child trace inherits the parent-generated modules into a new workspace and modifies only the local copies. The editable surfaces include generated graph-pass, model, convolution, and trainer modules, corresponding to representation, computation, and learning-signal interventions. Parent traces remain unchanged, while each completed trace snapshots its source artifacts and records a parent-relative diff. This design supports replay and branching without destructive rollback.
+
+The Candidate Reviewer is bound to the hypothesis-card SHA-256 fingerprint and an implementation fingerprint containing generated-source hashes and model, trainer, graph-pass, and base-configuration fields. Any subsequent edit makes the review stale, which is detected by the runtime validator.
+
+Before execution, the validator additionally checks trace identity and lineage, required artifacts, context consistency, generated-file interfaces, model/trainer contracts, and the parent finalization state. A malformed or stale trace is rejected before consuming a training budget. This guardrail distinguishes an invalid execution from a scientific refutation of a hypothesis.
+
+\subsubsection{Decoupling Semantic Interventions from Parameter Search}
+
+HEDGE separates a semantic intervention from generic parameter optimization. For a fixed candidate formulation $\mathcal{C}_i$, a task-approved inner search may optimize training parameters $\lambda$:
+\begin{equation}
+    \lambda_i^{\star}=\arg\max_{\lambda\in\Lambda(\kappa)}
+    Q(\mathcal{C}_i,\lambda;\kappa).
+    \label{eq:param_search}
+\end{equation}
+The search space and its Optuna execution are recorded explicitly in the trace. Learning rate, dropout, batch size, and related parameters are either held fixed by $\kappa$ or optimized in this distinct stage; they cannot silently become the explanation for a semantic hypothesis. The outer trace comparison therefore evaluates formulation-level interventions, while the inner search supplies a controlled competitive configuration for each candidate.
+
+\subsection{Design Traces and Evidence-Grounded Research Memory}
+\label{sec:design_trace}
+
+A conventional NAS record commonly associates a candidate identifier with a scalar score. This is insufficient for open semantic exploration because it omits why the candidate was proposed, how it differs from its parent, and what the observed result implies about the claimed mechanism. HEDGE therefore records each completed research decision as a design trace
+\begin{equation}
+    T_i=(p_i,H_i,\Delta_i,C_i,E_i,\mathcal{A}_i),
+    \label{eq:design_trace}
+\end{equation}
+where $p_i$ identifies the parent trace, $H_i$ is the reviewed hypothesis card, $\Delta_i$ is the scoped implementation delta, $C_i=(\kappa,\lambda_i,\xi_i)$ records the fixed research context, approved candidate configuration, and execution metadata, $E_i$ is the resulting empirical evidence, and $\mathcal{A}_i$ is the analysis record. A trace consequently binds \emph{why} a change was proposed, \emph{what} changed, \emph{how} it was evaluated, \emph{what} occurred, and \emph{what} was learned.
+
+The trace is a research record rather than a training log. Its context and parent lineage establish the comparison boundary; its reviewed card and implementation delta establish the intended intervention; and its evidence and analysis establish the resulting scientific claim. All traces within one research context follow the same dataset split, metric semantics, budget, and evaluation protocol specified by $\kappa$. This makes a child-parent comparison attributable to the declared intervention instead of an uncontrolled change in the experimental setting.
+
+Each trace also preserves the evidence needed for later inspection: the reviewed proposal, source snapshot and parent-relative diff, configuration record, execution summary, diagnostics, and analysis card. The runtime retains these artifacts in the trace-local workspace while keeping completed parent traces immutable. Consequently, a researcher can replay a candidate, inspect the origin of a reported improvement, or create a controlled branch from an earlier trace without overwriting the original evidence.
+
+\subsubsection{Result Analysis and Next Actions}
+
+The result analyst evaluates whether the child-parent comparison is comparable, whether the validation-selected checkpoint changes the metric in the expected direction on the fixed test split, whether predicted task-specific observations occur, and whether the falsification condition is triggered. When the available evidence does not support a mechanism-level judgment, the analyst records the uncertainty and may request a narrowly scoped diagnostic. The analyst then records
+\begin{equation}
+z_i\in\{\texttt{supported},\texttt{refuted},\texttt{inconclusive}\},
+\qquad
+a_i\in\{\texttt{extend},\texttt{ablate},\texttt{prune},\texttt{restart},\texttt{stop}\}.
+\label{eq:outcome_action}
+\end{equation}
+The original hypothesis card is immutable after execution; the analysis instead records the outcome, insight, confounders, diagnostic evidence, and constraints on the next hypothesis. The recorded action directly informs later exploration: supported traces can be extended or ablated, refuted directions are pruned, and inconclusive traces motivate a narrower diagnostic or restart. This prevents retrospective rewriting of unsuccessful ideas while allowing both positive and negative evidence to shape the trace tree.
+
+\subsection{Trace-Guided Exploration and Domain Generality}
+\label{sec:trace_guided_exploration}
+
+Completed traces form the research memory
+\begin{equation}
+    \mathcal{M}_t=\{T_0,T_1,\ldots,T_t\},
+\end{equation}
+from which the next parent and hypothesis are selected. The memory consists of structured cards, candidate reviews, context-compatible validation and fixed-test summaries, code diffs, and analysis records---not a raw conversation transcript. A supported mechanism can be extended or ablated; a refuted direction can be pruned; and an inconclusive result can motivate a narrower diagnostic or restart. Thus, the next decision depends on mechanism-level evidence as well as the recorded validation and test metrics.
+
+The research protocol is domain-agnostic even though the candidate implementations are task-specific. A domain interface supplies the task descriptor, default context, generated-file templates, training and evaluation entry points, metric semantics, allowable parameter search space, and domain-specific validation. The generic runtime owns trace creation, review gates, scheduling, evidence preparation, execution, and result recording. This separation lets the same hypothesis-driven lifecycle operate across HLS resource prediction, netlist-level timing prediction, and RTL-to-netlist timing prediction while preserving each domain's graph semantics and model templates.
+
+In summary, HEDGE converts open-ended LLM exploration into a controlled sequence of EDA modeling decisions. Semantic hypothesis grounding narrows the search toward meaningful representation, computation, and learning-signal mechanisms; scoped trace-local realization and fingerprinted review gates protect evidence attribution; and evidence-grounded trace memory turns completed experiments into reusable constraints for subsequent exploration. Section~\ref{exp} evaluates whether these mechanisms discover useful EDA-native GNN designs beyond fixed-space automation.
