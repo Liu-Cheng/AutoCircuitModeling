@@ -1,0 +1,40 @@
+\subsection{EDA-Native Mechanism Discovery}
+\label{sec:mechanism_discovery}
+
+Overall performance alone does not establish that HEDGE discovered a mechanism beyond a fixed search space. We therefore analyze representative trace trajectories. A trace is classified as an EDA-native discovery only when (i) its mechanism is absent from the initial fixed search space; (ii) the unified Candidate Review accepts both its EDA grounding and parent-relative implementation evidence; (iii) its validation evidence passes the configured confirmation procedure; and (iv) its final trace analysis is classified as supported, refuted, or inconclusive.
+
+The representative analysis uses the RTL timing trace collection. The unchanged root trace (\texttt{trace\_000001}) obtained validation MAPE 12.661 at epoch 27. One branch replaced the training objective, while preserving the split, model, optimizer, scheduler, validation metric, and checkpoint rule. Its hypothesis was that applying SmoothL1 to \texttt{log1p} arrival times at lawful register nodes would better match relative arrival error. The accepted L3 intervention in \texttt{trace\_000007} changed only \texttt{generated/trainer.py} and reached validation MAPE 11.540 at epoch 24. The MAPE-direct sibling \texttt{trace\_000008} instead reached 12.668 and was classified as refuted. Removing the parent's SmoothL1 near-zero curvature while retaining log compression (\texttt{trace\_000010}) reached 11.771 and was classified as supported, indicating that log-space error compression retained most of the parent improvement under the recorded comparison.
+
+A second accepted branch, \texttt{trace\_000018}, introduced an L2 cell-type scale on propagated messages and reached validation MAPE 10.589. Repeated executions of its frozen configuration (\texttt{trace\_000025}, \texttt{trace\_000029}, and \texttt{trace\_000030}) yielded 10.559, 10.554, and 10.521, respectively. These repetitions provide limited repeatability evidence, but do not establish general robustness. Failed or unstable branches remain in the trace record and are classified as refuted or inconclusive rather than being removed from the analysis.
+
+% === DISCOVERY RESULT FIGURE PLACEHOLDER (Fig.~\ref{fig:trace_tree}) ========
+% Draw the following audited branch structure from
+% autoGNN_/agent_autoresearch/experiments/rtl_timing/trace_EDA:
+% trace_000001 (root, 12.661) -> trace_000007 (log-space SmoothL1, 11.540)
+% -> trace_000008 (MAPE-direct loss, 12.668, refuted) and trace_000010
+% (log-space L1 ablation, 11.771, supported); trace_000018 (cell-type message
+% scale, 10.589) -> traces 000025/000029/000030 (repeated executions,
+% 10.559/10.554/10.521, supported). Include inconclusive sibling branches.
+%
+\begin{table*}[t]
+\centering
+\caption{Audited outcomes from the representative RTL timing trace collection. All values are validation MAPE ($\downarrow$) on the fixed split; repeated runs do not establish general robustness.}
+\label{tab:discoveries}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Trace} & \textbf{Parent} & \textbf{EDA mechanism} & \textbf{Level} & \textbf{Outside fixed space?} & \textbf{Validation evidence} & \textbf{Outcome} \\
+\midrule
+\texttt{000007} & \texttt{000001} & log-space SmoothL1 arrival-error loss & L3 & yes & 12.661 $\rightarrow$ 11.540 & inconclusive \\
+\texttt{000008} & \texttt{000007} & MAPE-direct loss control & L3 & yes & 11.540 $\rightarrow$ 12.668 & refuted \\
+\texttt{000010} & \texttt{000007} & log-space L1 loss ablation & L3 & yes & 11.540 $\rightarrow$ 11.771 & supported \\
+\texttt{000018} & \texttt{000012} & cell-type message scale & L2 & yes & 10.589 & inconclusive \\
+\texttt{000025/29/30} & \texttt{000018} & frozen-configuration repeats & -- & no & 10.559 / 10.554 / 10.521 & supported$^{*}$ \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+\begin{minipage}{0.96\textwidth}
+\footnotesize $^{*}$Supported as limited repeatability evidence only; it does not establish general robustness or a new mechanism.
+\end{minipage}
+\end{table*}
