@@ -37,7 +37,7 @@ The framework has four design goals. \emph{Open-ended discovery} permits mechani
 \subsection{Framework Overview}
 \label{sec:framework_overview}
 
-Figure~\ref{fig:framework} illustrates one HEDGE research cycle. Given an active context $\kappa$ and completed trace memory $\mathcal{M}_t=\{T_0,\ldots,T_t\}$, a proposer selects a comparable parent, authors one hypothesis card, and creates a trace-local implementation. One independent Candidate Reviewer then evaluates EDA grounding and bidirectional alignment between the card and the exact code/configuration delta. The runtime validates the workspace contracts and executes the candidate. Each run selects a checkpoint on validation and evaluates that checkpoint on the fixed test split. Finally, a result analyst receives the validation-and-test evidence bundle, records the outcome, and recommends the next action. The completed trace is appended to $\mathcal{M}_t$ and can be extended, ablated, pruned, or used as the root of a new branch.
+Figure~\ref{fig:framework} illustrates one CircuitModelPilot research cycle. Given an active context $\kappa$ and completed trace memory $\mathcal{M}_t=\{T_0,\ldots,T_t\}$, a proposer selects a comparable parent, authors one hypothesis card, and creates a trace-local implementation. One independent Candidate Reviewer then evaluates EDA grounding and bidirectional alignment between the card and the exact code/configuration delta. The runtime validates the workspace contracts and executes the candidate. Each run selects a checkpoint on validation and evaluates that checkpoint on the fixed test split. Finally, a result analyst receives the validation-and-test evidence bundle, records the outcome, and recommends the next action. The completed trace is appended to $\mathcal{M}_t$ and can be extended, ablated, pruned, or used as the root of a new branch.
 
 This decomposition separates three decisions that are easily conflated in a bare-LLM loop: \emph{what} mechanism should be tested, \emph{how} it is implemented, and \emph{what} the resulting evidence implies. The workflow specification requires the Candidate Reviewer and result analyst to use fresh contexts distinct from the proposer; the runtime verifies their recorded agent identifiers and review fingerprints. This separation is procedural rather than a claim of statistical independence between model outputs.
 
@@ -78,7 +78,7 @@ where $M_i$ is the task mechanism, $R_i$ the modeling rationale, $O_i$ the concr
 
 The card transforms a free-form idea into a research object. ``Use a deeper GNN'' identifies neither an EDA mechanism nor an observable consequence. In contrast, a timing hypothesis may state that arrival-time information accumulates along directed timing dependencies, that symmetric propagation underrepresents this mechanism, that a direction-aware update should reduce error at deep endpoints, and that it is falsified if this diagnostic does not improve under a controlled comparison. The former is generic tuning; the latter can be reviewed against both code and evidence.
 
-The L1--L3 labels play two complementary roles. The card declares the \emph{intended} semantic level(s) before implementation. After execution, HEDGE also derives \emph{realized} levels from the changed trace-local artifacts: graph transformation code corresponds to L1, model or convolution code to L2, and trainer code to L3. This post-hoc label is a retrieval and attribution signal; it does not replace the prior review of the stated mechanism.
+The L1--L3 labels play two complementary roles. The card declares the \emph{intended} semantic level(s) before implementation. After execution, CircuitModelPilot also derives \emph{realized} levels from the changed trace-local artifacts: graph transformation code corresponds to L1, model or convolution code to L2, and trainer code to L3. This post-hoc label is a retrieval and attribution signal; it does not replace the prior review of the stated mechanism.
 
 \subsubsection{Candidate Review}
 
@@ -87,7 +87,7 @@ After a trace-local candidate is authored, one independent Candidate Reviewer ex
 \subsection{Scoped Candidate Realization and Validation}
 \label{sec:scoped_realization}
 
-Open-ended code generation creates an attribution risk: a candidate can appear superior because it changed preprocessing, evaluation, seeds, or shared infrastructure rather than the stated EDA mechanism. HEDGE separates trace-local editable artifacts from protected comparison-critical components. Let $\mathcal{S}_{\mathrm{edit}}$ denote the declared candidate scope and $\mathcal{S}_{\mathrm{prot}}$ the shared framework, task interface, dataset definition, and evaluation logic. A valid candidate delta obeys
+Open-ended code generation creates an attribution risk: a candidate can appear superior because it changed preprocessing, evaluation, seeds, or shared infrastructure rather than the stated EDA mechanism. CircuitModelPilot separates trace-local editable artifacts from protected comparison-critical components. Let $\mathcal{S}_{\mathrm{edit}}$ denote the declared candidate scope and $\mathcal{S}_{\mathrm{prot}}$ the shared framework, task interface, dataset definition, and evaluation logic. A valid candidate delta obeys
 \begin{equation}
     \Delta_i\subseteq\mathcal{S}_{\mathrm{edit}},\qquad
     \Delta_i\cap\mathcal{S}_{\mathrm{prot}}=\emptyset.
@@ -102,7 +102,7 @@ Before execution, the validator additionally checks trace identity and lineage, 
 
 \subsubsection{Decoupling Semantic Interventions from Parameter Search}
 
-HEDGE separates a semantic intervention from generic parameter optimization. For a fixed candidate formulation $\mathcal{C}_i$, a task-approved inner search may optimize training parameters $\lambda$:
+CircuitModelPilot separates a semantic intervention from generic parameter optimization. For a fixed candidate formulation $\mathcal{C}_i$, a task-approved inner search may optimize training parameters $\lambda$:
 \begin{equation}
     \lambda_i^{\star}=\arg\max_{\lambda\in\Lambda(\kappa)}
     Q(\mathcal{C}_i,\lambda;\kappa).
@@ -113,7 +113,7 @@ The search space and its Optuna execution are recorded explicitly in the trace. 
 \subsection{Design Traces and Evidence-Grounded Research Memory}
 \label{sec:design_trace}
 
-A conventional NAS record commonly associates a candidate identifier with a scalar score. This is insufficient for open semantic exploration because it omits why the candidate was proposed, how it differs from its parent, and what the observed result implies about the claimed mechanism. HEDGE therefore records each completed research decision as a design trace
+A conventional NAS record commonly associates a candidate identifier with a scalar score. This is insufficient for open semantic exploration because it omits why the candidate was proposed, how it differs from its parent, and what the observed result implies about the claimed mechanism. CircuitModelPilot therefore records each completed research decision as a design trace
 \begin{equation}
     T_i=(p_i,H_i,\Delta_i,C_i,E_i,\mathcal{A}_i),
     \label{eq:design_trace}
@@ -146,4 +146,4 @@ from which the next parent and hypothesis are selected. The memory consists of s
 
 The research protocol is domain-agnostic even though the candidate implementations are task-specific. A domain interface supplies the task descriptor, default context, generated-file templates, training and evaluation entry points, metric semantics, allowable parameter search space, and domain-specific validation. The generic runtime owns trace creation, review gates, scheduling, evidence preparation, execution, and result recording. This separation lets the same hypothesis-driven lifecycle operate across HLS resource prediction, netlist-level timing prediction, and RTL-to-netlist timing prediction while preserving each domain's graph semantics and model templates.
 
-In summary, HEDGE converts open-ended LLM exploration into a controlled sequence of EDA modeling decisions. Semantic hypothesis grounding narrows the search toward meaningful representation, computation, and learning-signal mechanisms; scoped trace-local realization and fingerprinted review gates protect evidence attribution; and evidence-grounded trace memory turns completed experiments into reusable constraints for subsequent exploration. Section~\ref{exp} evaluates whether these mechanisms discover useful EDA-native GNN designs beyond fixed-space automation.
+In summary, CircuitModelPilot converts open-ended LLM exploration into a controlled sequence of EDA modeling decisions. Semantic hypothesis grounding narrows the search toward meaningful representation, computation, and learning-signal mechanisms; scoped trace-local realization and fingerprinted review gates protect evidence attribution; and evidence-grounded trace memory turns completed experiments into reusable constraints for subsequent exploration. Section~\ref{exp} evaluates whether these mechanisms discover useful EDA-native GNN designs beyond fixed-space automation.
