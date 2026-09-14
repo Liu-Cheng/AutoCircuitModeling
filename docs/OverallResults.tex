@@ -1,0 +1,41 @@
+\begin{table*}[t]
+\centering
+\caption{Overall comparison of HEDGE with human-designed, fixed-space NAS, and naive AutoResearch baselines across three EDA prediction tasks. Relative change is measured against the human-designed baseline in the metric's natural direction.}
+\label{tab:main_results}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Task} & \textbf{Metric / split} & \textbf{Human baseline} & \textbf{Fixed-space NAS} & \textbf{Naive AutoResearch} & \textbf{HEDGE} & \textbf{HEDGE change} \\
+\midrule
+HLS critical-path prediction
+& MAPE $\downarrow$
+& 7.680
+& 7.325
+& \textbf{7.490}
+& 7.645
+& $-0.5\%$ \\
+
+Netlist timing prediction
+& Mean per-target $R^2$ $\uparrow$
+& 0.758
+& 0.770
+& \textbf{0.774}
+& 0.766
+& $+1.1\%$ \\
+
+RTL-to-netlist timing prediction
+& MAPE $\downarrow$
+& 14.575
+& 13.890
+& 13.169
+& \textbf{10.845}
+& $-25.6\%$ \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+\begin{minipage}{0.98\textwidth}
+\footnotesize
+\textit{Notes.} A dash denotes that no comparable result is available. The fixed-space NAS record for Netlist uses a differently named $R^2$ objective and is therefore omitted. Relative change is calculated against the human-designed baseline using the metric's natural direction.
+\end{minipage}
+\end{table*}
