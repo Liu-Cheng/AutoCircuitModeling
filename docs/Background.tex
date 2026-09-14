@@ -81,7 +81,7 @@ RoutePlacer~\cite{hou2024routeplacer} \\
 \end{tabular}
 \end{table*}
 
-At the representation level, prior works redesign graph abstractions to expose task-relevant EDA objects and dependencies, such as program directives, RTL operators, logic functions, timing paths, or physical-layout interactions. At the computation level, they modify message passing, update order, or readout so that information flow better matches EDA analysis rules, such as directed dataflow, toggle propagation, logic composition, STA-like timing propagation, or spatial interaction modeling. At the learning-signal level, they introduce intermediate quantities, auxiliary objectives, distillation, ranking signals, or differentiable EDA losses to guide the learned representation toward task-relevant semantics. These patterns show that many EDA GNN improvements are not merely choices of neural primitives, but manually designed hypotheses about how an EDA property should be exposed, propagated, and learned. SCOPE builds on this observation by treating representation, computation, and learning signal as explicit semantic levels for agentic exploration.
+At the representation level, prior works redesign graph abstractions to expose task-relevant EDA objects and dependencies, such as program directives, RTL operators, logic functions, timing paths, or physical-layout interactions. At the computation level, they modify message passing, update order, or readout so that information flow better matches EDA analysis rules, such as directed dataflow, toggle propagation, logic composition, STA-like timing propagation, or spatial interaction modeling. At the learning-signal level, they introduce intermediate quantities, auxiliary objectives, distillation, ranking signals, or differentiable EDA losses to guide the learned representation toward task-relevant semantics. These patterns show that many EDA GNN improvements are not merely choices of neural primitives, but manually designed hypotheses about how an EDA property should be exposed, propagated, and learned. HEDGE builds on this observation by treating representation, computation, and learning signal as explicit semantic levels for agentic exploration.
 
 
 
@@ -97,13 +97,13 @@ EDA-native GNN design requires automation before model selection. The design var
 \subsection{LLM Agents for Open-Ended Model Exploration}
 \label{sec:llm_agents}
 % 说明 LLM agents 的潜力与风险
-% 引出 SCOPE 的 protocol-grounded exploration
+% 引出 HEDGE 的 protocol-grounded exploration
 
 Recent LLM-based research agents have shown the potential of automating parts of the research loop, including idea generation, code modification, experiment execution, and result tracking~\cite{lu2024aiscientist,karpathy2026autoresearch,jin2026arbor}. 
 These systems demonstrate that LLM agents can explore open-ended design spaces beyond fixed search operators. 
 However, for EDA-native GNN design, open-ended generation alone is insufficient: a generated variant must correspond to a grounded EDA modeling hypothesis, and its measured improvement must be attributable to that hypothesis rather than to uncontrolled changes in data processing, training settings, or evaluation protocols.
 
-SCOPE is therefore different from general-purpose autonomous research frameworks. 
+HEDGE is therefore different from general-purpose autonomous research frameworks.
 It does not aim to automate arbitrary scientific discovery; instead, it restricts agentic exploration to semantic co-design for EDA GNNs. 
 The agent searches over representation, computation, and learning-signal hypotheses, while the framework records each candidate through a controlled design trace for comparison, replay, and attribution. 
-This protocol-grounded view allows SCOPE to preserve the flexibility of LLM agents without reducing the process to unstructured trial-and-error.
+This protocol-grounded view allows HEDGE to preserve the flexibility of LLM agents without reducing the process to unstructured trial-and-error.

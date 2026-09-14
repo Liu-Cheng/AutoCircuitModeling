@@ -1,7 +1,7 @@
 \section{Experiments}
 \label{exp}
 
-We evaluate \sysname as an AutoResearch framework for EDA graph prediction. The evaluation addresses two complementary questions: whether the designs discovered by \sysname improve predictive performance, and whether its trace-grounded protocol produces attributable and efficient research decisions. We first describe a common experimental setup, then report overall predictive results, analyze representative discoveries, and examine the contributions of the protocol and discovered mechanisms.
+We evaluate \sysname as an AutoResearch framework for EDA graph prediction. The evaluation asks whether HEDGE discovers EDA-native mechanisms outside a fixed search space, whether these mechanisms improve prediction under a controlled comparison, and whether Candidate Review, trace-local scope, and structured Trace memory make the research process more trustworthy.
 
 \subsection{Experimental Setup}
 \label{sec:exp_setup}
@@ -11,69 +11,97 @@ We evaluate \sysname as an AutoResearch framework for EDA graph prediction. The 
 
 We evaluate \sysname on EDA graph-prediction tasks spanning multiple design abstractions: HLS resource prediction, netlist-level timing prediction, and RTL-to-netlist timing prediction. HLS resource prediction operates on program- or operation-level graphs and estimates implementation quantities such as critical-path and resource-related targets. Netlist timing prediction operates on logic or timing graphs, where directed connectivity and path dependencies determine delay-related quantities. RTL-to-netlist timing prediction uses RTL-level structural information to estimate downstream timing-related targets. Together, these tasks require distinct graph representations, propagation mechanisms, and learning signals.
 
-For every task, we report the graph construction, prediction target, dataset size, split, and evaluation metric. All compared methods for the same task use the identical data split and task interface.
+All compared methods for the same task use the identical data split and task interface. A compact task-setup table will report the verified dataset, graph representation, target, split, metric, and root baseline; split hashes and run-level settings are given in Appendix~\ref{app:reproducibility}.
 
 % === SETUP TABLE PLACEHOLDER (Table~\ref{tab:task_summary}) ==================
-% Insert a compact task-and-dataset table here. This is a setup table, not a result table.
-% Suggested columns: Task | Graph representation | Target | \# Graphs | Split | Metric | Root baseline.
+% Task | Graph representation | Target | \# Graphs / \# Designs | Split | Metric |
+% Root baseline. Populate only with verified task-manifest information.
 
 \subsubsection{Evaluation Protocol}
 \label{sec:evaluation_protocol}
 
-Each task is evaluated within one fixed ResearchContext. The context fixes the dataset split, selection metric and direction, loss semantics, seed policy, training budget, and evaluation protocol. A candidate is compared only with traces created under the same context. Thus, child-parent differences are attributable to the declared intervention rather than to a changed split, metric, or training budget.
+Each task is evaluated within one fixed ResearchContext. The context fixes the dataset split, selection metric and direction, loss semantics, epoch budget, and protocol version. A child is compared only with traces created under the same context; hence, a child-parent comparison attributes a difference to the declared intervention rather than to a changed split, metric, or training budget.
 
-Each run selects its checkpoint using the task's validation protocol and then evaluates that checkpoint on a fixed test split. The resulting validation-and-test bundle is used for trace comparison, result analysis, and subsequent research decisions. Neither validation nor test metrics are used to train model parameters. Promising candidates are re-evaluated according to the configured confirmation procedure before being treated as supported mechanisms.
+During search, parent selection, hypothesis formation, checkpoint selection, trace analysis, and confirmation use validation evidence only. After a candidate is authored, the unified Candidate Review checks its EDA grounding and parent-relative implementation alignment before execution. The held-out test split is inaccessible during hypothesis formulation, Candidate Review, execution, and trace analysis. After the pre-specified search budget is exhausted, the top three validation-ranked candidates and their code are frozen; they are then evaluated on the held-out split for final reporting, without test-based re-ranking or further search. Neither validation nor test metrics are used for gradient-based parameter optimization.
 
 \subsubsection{Baselines}
 \label{sec:exp_baselines}
 
-We compare \sysname with three baselines representing progressively less constrained forms of model design.
+We compare four conditions under the common task contract.
 
 \noindent\textbf{Human-designed baseline.} For each task, we begin with an established task-specific GNN and its corresponding graph construction, trainer, and metric contract. This model initializes the root trace and provides the reference point for candidate-parent comparisons.
 
-\noindent\textbf{Fixed-space automated search.} This baseline searches a predefined space of approved GNN configurations and training parameters. It can optimize candidates already present in this space, but it cannot introduce a new task representation, propagation mechanism, or learning signal.
+\noindent\textbf{Fixed-space automated search.} This baseline searches a task-specific, predefined configuration space. It can optimize configurations already present in that space, but cannot introduce a new task representation, propagation mechanism, or learning signal. The verified search-space definitions are released with the experiment manifests.
 
-\noindent\textbf{Naive LLM exploration.} This baseline receives the same task profile, trace-local editable modules, starting model, and training budget as \sysname. It does not use the structured hypothesis card, unified Candidate Review, or trace-guided analysis protocol. It isolates the value of HEDGE's research protocol from the general ability of an LLM to modify code.
+\noindent\textbf{Naive LLM exploration.} This baseline receives the same task profile, trace-local editable modules, starting model, and pre-specified trace budget as \sysname. It may edit the same graph-pass, model, convolution, and trainer modules, but does not use the hypothesis card, Candidate Review, or structured trace memory and analysis. It therefore isolates the value of HEDGE's research protocol from the general ability of an LLM to modify code.
 
-All automated methods receive the same task-specific starting point and matched trace or compute budget. They use the same split, metric, loss, epoch budget, and seed policy within each task.
+\noindent\textbf{Full HEDGE.} HEDGE uses the same task profile, editable modules, starting model, and matched trace/training budget as Naive LLM exploration, while requiring a Hypothesis Card, unified Candidate Review, trace-local scope validation, and structured Trace memory and analysis.
+
+All automated methods use the same task-specific starting point, split, metric, loss, and epoch budget within each task. Complete search-space definitions, LLM invocation settings, runtime environments, and per-trace configurations are retained in the code artifact.
 
 \subsubsection{Implementation Details}
 \label{sec:exp_implementation}
 
 Candidates are implemented in trace-local generated modules. Representation interventions are realized through graph-pass modules, computation interventions through model or convolution modules, and learning-signal interventions through trainer modules. Before execution, the runtime validates the declared editable scope, generated-file interfaces, parent lineage, context consistency, and review-artifact freshness. Each completed trace retains its source snapshot, parent-relative diff, configuration record, execution summary, and analysis record.
 
-For a fixed semantic candidate, task-approved parameter search may optimize training parameters within a declared search space. This inner optimization is recorded separately from the semantic intervention, so learning-rate, dropout, batch-size, or related changes cannot be presented as the EDA mechanism itself. We report each task metric in its natural direction and report mean and standard deviation under the prescribed seed policy whenever multi-seed evaluation is used.
+For a fixed semantic candidate, task-approved parameter search may optimize training parameters within a declared search space. This inner optimization is recorded separately from the semantic intervention, so learning-rate, dropout, batch-size, or related changes cannot be presented as the EDA mechanism itself. We report each task metric in its natural direction.
 
-% TODO: State hardware, software versions, root-model configuration, LLM configuration,
-% seed values, trace/compute budget, and parameter-search budget. Move dense details to appendix.
+% TODO: Complete the released manifests with the verified hardware and software
+% environment, LLM model revision and temperature, and epoch policy,
+% per-method trace/training budget, and HPO budget.
 
 \subsection{Overall Predictive Performance}
 \label{sec:overall_performance}
 
-We first evaluate whether the designs selected by \sysname improve predictive performance. For every task and target, we compare the final HEDGE-selected design with the human-designed baseline, fixed-space automated search, and naive LLM exploration under the common protocol above. The main comparison reports the task metric, variability across the prescribed seeds, and the relative change from the root baseline.
+We evaluate whether validation-selected HEDGE candidates improve predictive performance relative to the human-designed baseline, fixed-space automated search, and Naive LLM exploration under the common protocol above. The comparison reports the task metric and the relative change from the root baseline.
 
-This experiment evaluates the practical utility of open semantic exploration. It does not assume that one architecture should dominate every EDA task. Instead, results are interpreted at the task level: an improvement is connected to the supported trace or traces that introduced the corresponding mechanism, whereas a non-improvement indicates that the explored directions did not yield a stronger design under the available budget.
+The table is interpreted at the task level. Any improvement is linked to the supported mechanism and trace evidence described in Section~\ref{sec:mechanism_discovery}; a non-improvement is reported as evidence that the explored directions did not yield a stronger design under the matched budget. The comparison does not assume that one architecture should dominate every EDA task.
 
-% === MAIN RESULT TABLE PLACEHOLDER (Table~\ref{tab:main_results}) ===========
-% Cross-task predictive performance. Rows: task-target pairs. Columns: Metric |
-% Human baseline | Fixed-space search | Naive LLM | HEDGE | Relative change.
-% Report mean $\pm$ standard deviation; bold best and underline second best.
+% === OVERALL-RESULTS TABLE PLACEHOLDER (Table~\ref{tab:main_results}) ======
+% Task | Metric / split | Human baseline | Fixed-space search | Naive LLM |
+% HEDGE | HEDGE change. Fill only with final held-out reports for
+% validation-selected, frozen candidates.
 
 \subsection{EDA-Native Mechanism Discovery}
 \label{sec:mechanism_discovery}
 
-Overall performance alone does not show whether \sysname discovered a mechanism beyond a fixed search space. We therefore analyze representative trace trajectories. For each selected trajectory, we report the parent observation, the EDA objects and analysis rule named in the hypothesis card, the intended semantic level, the trace-local implementation delta, and the resulting evidence.
+Overall performance alone does not establish that HEDGE discovered a mechanism beyond a fixed search space. We therefore analyze representative trace trajectories. A trace is classified as an EDA-native discovery only when (i) its mechanism is absent from the initial fixed search space; (ii) the unified Candidate Review accepts both its EDA grounding and parent-relative implementation evidence; (iii) its validation evidence passes the configured confirmation procedure; and (iv) its final trace analysis is classified as supported, refuted, or inconclusive.
 
-The HLS resource-prediction traces provide a representative case. Rather than selecting a different generic backbone, candidate traces can introduce operation- or dependency-specific mechanisms, such as controlled use of resource-related operation attributes, prior reinjection, or propagation along an explicit program dependence. A candidate is considered an EDA-native discovery only when its mechanism is absent from the initial fixed space, its hypothesis and implementation pass the relevant reviews, and its final trace analysis supports the claimed effect. A favorable proxy result that fails confirmation is retained as refuted or inconclusive evidence rather than reported as a discovery.
+The representative analysis uses the RTL timing trace collection. The unchanged root trace (\texttt{trace\_000001}) obtained validation MAPE 12.661 at epoch 27. One branch replaced the training objective, while preserving the split, model, optimizer, scheduler, validation metric, and checkpoint rule. Its hypothesis was that applying SmoothL1 to \texttt{log1p} arrival times at lawful register nodes would better match relative arrival error. The accepted L3 intervention in \texttt{trace\_000007} changed only \texttt{generated/trainer.py} and reached validation MAPE 11.540 at epoch 24. The MAPE-direct sibling \texttt{trace\_000008} instead reached 12.668 and was classified as refuted. Removing the parent's SmoothL1 near-zero curvature while retaining log compression (\texttt{trace\_000010}) reached 11.771 and was classified as supported, indicating that log-space error compression retained most of the parent improvement under the recorded comparison.
+
+A second accepted branch, \texttt{trace\_000018}, introduced an L2 cell-type scale on propagated messages and reached validation MAPE 10.589. Repeated executions of its frozen configuration (\texttt{trace\_000025}, \texttt{trace\_000029}, and \texttt{trace\_000030}) yielded 10.559, 10.554, and 10.521, respectively. These repetitions provide limited repeatability evidence, but do not establish general robustness. Failed or unstable branches remain in the trace record and are classified as refuted or inconclusive rather than being removed from the analysis.
 
 % === DISCOVERY RESULT FIGURE PLACEHOLDER (Fig.~\ref{fig:trace_tree}) ========
-% Insert one representative trace tree, preferably for HLS-FF. Annotate each node
-% with a concise mechanism label and its supported/refuted/inconclusive outcome.
-% A companion panel may show: observation -> hypothesis -> implementation -> evidence.
+% Draw the following audited branch structure from
+% autoGNN_/agent_autoresearch/experiments/rtl_timing/trace_EDA:
+% trace_000001 (root, 12.661) -> trace_000007 (log-space SmoothL1, 11.540)
+% -> trace_000008 (MAPE-direct loss, 12.668, refuted) and trace_000010
+% (log-space L1 ablation, 11.771, supported); trace_000018 (cell-type message
+% scale, 10.589) -> traces 000025/000029/000030 (repeated executions,
+% 10.559/10.554/10.521, supported). Include inconclusive sibling branches.
 %
-% === DISCOVERY RESULT TABLE PLACEHOLDER (Table~\ref{tab:discoveries}) =======
-% Columns: Trace | Parent | EDA mechanism | Level | Outside initial space? |
-% Validation result | Confirmation | Outcome.
+\begin{table*}[t]
+\centering
+\caption{Audited outcomes from the representative RTL timing trace collection. All values are validation MAPE ($\downarrow$) on the fixed split; repeated runs do not establish general robustness.}
+\label{tab:discoveries}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Trace} & \textbf{Parent} & \textbf{EDA mechanism} & \textbf{Level} & \textbf{Outside fixed space?} & \textbf{Validation evidence} & \textbf{Outcome} \\
+\midrule
+\texttt{000007} & \texttt{000001} & log-space SmoothL1 arrival-error loss & L3 & yes & 12.661 $\rightarrow$ 11.540 & inconclusive \\
+\texttt{000008} & \texttt{000007} & MAPE-direct loss control & L3 & yes & 11.540 $\rightarrow$ 12.668 & refuted \\
+\texttt{000010} & \texttt{000007} & log-space L1 loss ablation & L3 & yes & 11.540 $\rightarrow$ 11.771 & supported \\
+\texttt{000018} & \texttt{000012} & cell-type message scale & L2 & yes & 10.589 & inconclusive \\
+\texttt{000025/29/30} & \texttt{000018} & frozen-configuration repeats & -- & no & 10.559 / 10.554 / 10.521 & supported$^{*}$ \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+\begin{minipage}{0.96\textwidth}
+\footnotesize $^{*}$Supported as limited repeatability evidence only; it does not establish general robustness or a new mechanism.
+\end{minipage}
+\end{table*}
 
 \subsection{Ablation Study}
 \label{sec:ablation}
@@ -81,13 +109,13 @@ The HLS resource-prediction traces provide a representative case. Rather than se
 \subsubsection{Ablation of HEDGE Protocol Components}
 \label{sec:protocol_ablation}
 
-We next isolate the contribution of the protocol components that make HEDGE a trace-grounded AutoResearch framework. Starting from the full system, we remove one component at a time: (i) the unified Candidate Review, (ii) the scoped realization constraint, or (iii) structured trace memory and analysis. The ablations use the same task context and trace budget as full HEDGE.
+We next isolate the contribution of the protocol components that make HEDGE a trace-grounded AutoResearch framework. Starting from the full system, we remove one component at a time: (i) the unified Candidate Review, (ii) trace-local scope validation, or (iii) structured Trace memory and analysis. The ablations use the same task context and trace budget as full HEDGE.
 
 We evaluate these variants with trace-level reliability measures: the rate of grounded proposals, execution success rate, rate of comparable child-parent experiments, detected scope or alignment violations, replay success rate, and the fraction of initially promising candidates that survive confirmation. These results show whether each protocol component improves the quality and interpretability of the exploration process, independently of a final accuracy gain.
 
 % === PROTOCOL-ABLATION RESULT TABLE PLACEHOLDER (Table~\ref{tab:protocol_ablation}) ===
-% Rows: Full HEDGE | w/o candidate review | w/o scoped
-% realization | w/o structured trace memory | Naive LLM. Columns: Grounded
+% Rows: Full HEDGE | w/o Candidate Review | w/o trace-local scope validation |
+% w/o structured Trace memory | Naive LLM. Columns: Grounded
 % proposals | Execution success | Comparable traces | Violations | Replay | Confirmed.
 
 \subsubsection{Ablation of Discovered EDA Mechanisms}
@@ -105,6 +133,6 @@ This analysis distinguishes a genuine EDA mechanism from an improvement caused m
 \subsection{Discussion and Limitations}
 \label{sec:exp_discussion}
 
-HEDGE constrains exploration within a task interface and trace-local editable scope; it does not claim to autonomously redesign arbitrary EDA flows or infer missing domain semantics without a task profile. The quality of its hypotheses depends on the domain descriptor, templates, and diagnostics supplied by the task adapter. Similarly, separating the Candidate Reviewer and result analyst from the proposer reduces self-confirmation within the workflow but does not establish statistical independence between LLM outputs.
+HEDGE constrains exploration within a task interface and trace-local editable scope; it does not claim to autonomously redesign arbitrary EDA flows or infer missing domain semantics without a task profile. The quality of its hypotheses depends on the task profile, domain adapter, diagnostics, and generated templates supplied for the task. Candidate Review is role-separated from proposal generation, but this separation does not constitute a statistically independent, multi-model blind review. Semantic grounding does not guarantee that a hypothesis is correct; it requires that the hypothesis be testable and traceable.
 
 The framework also does not eliminate ordinary sources of experimental variance. Small data regimes, stochastic training, incomplete parameter search, and task-specific implementation constraints can make a promising trace unstable. We therefore report negative and inconclusive outcomes, apply configured confirmation procedures, and avoid interpreting an isolated gain as a general conclusion. Cross-task generality refers to the common trace-based protocol; the useful semantic mechanisms remain task-dependent.
