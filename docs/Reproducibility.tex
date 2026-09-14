@@ -2,39 +2,40 @@
 \section{Reproducibility and Implementation Details}
 \label{app:reproducibility}
 
-The accompanying code artifact contains the task configurations, generated candidate modules, trace manifests, and execution records used for the reported HEDGE and NAS runs. Each HEDGE manifest records its dataset and split identity, metric definition, loss, epoch budget, model configuration, editable scope, candidate review, and analysis record. Table~\ref{tab:task_manifests} gives the task contracts and the locations of the archived HEDGE traces.
+The accompanying code artifact contains the task configurations, generated candidate modules, trace manifests, and execution records used for the reported CircuitModelPilot and NAS runs. Each CircuitModelPilot manifest records its dataset and split identity, metric definition, loss, epoch budget, model configuration, editable scope, candidate review, and analysis record. Table~\ref{tab:task_manifests} gives the task contracts and the locations of the archived CircuitModelPilot traces.
 
 \begin{table*}[t]
 \centering
-\caption{Task contracts and archived HEDGE traces. $R^2$ is maximized and MAPE is minimized. The hash identifies the immutable split used by the corresponding trace collection.}
+\caption{Task contracts and archived CircuitModelPilot traces. $R^2$ is maximized and MAPE is minimized. The hash identifies the immutable split used by the corresponding trace collection.}
 \label{tab:task_manifests}
 \small
-\begin{tabular}{p{0.12\textwidth}p{0.18\textwidth}p{0.23\textwidth}p{0.13\textwidth}p{0.11\textwidth}p{0.15\textwidth}}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.11\textwidth}>{\raggedright\arraybackslash}p{0.16\textwidth}>{\raggedright\arraybackslash}p{0.18\textwidth}>{\raggedright\arraybackslash}p{0.12\textwidth}>{\raggedright\arraybackslash}p{0.06\textwidth}>{\raggedright\arraybackslash}X@{}}
 \toprule
-\textbf{Task} & \textbf{Dataset / target} & \textbf{Split ID (SHA-256)} & \textbf{Selection metric} & \textbf{Epochs} & \textbf{Archived HEDGE traces} \\
+\textbf{Task} & \textbf{Dataset / target} & \textbf{Split ID (SHA-256)} & \textbf{Selection metric} & \textbf{Epochs} & \textbf{Archived traces} \\
 \midrule
-HLS resource & \texttt{cdfg\_cp\_binary} / CP & \texttt{ogbg\_hls\_official\_split} (\texttt{b6fcaf1a\ldots 14104c}) & MAPE $\downarrow$ & 30 & 50; \texttt{experiments/hls\_resource/cp\_EDA} \\
-Netlist timing & \texttt{timing\_8\_rat} / arrival, net delay, cell delay, slew & recorded split (\texttt{4d6f7f50\ldots fe928}) & mean per-target $R^2$ $\uparrow$ & 1500 & 21; \texttt{experiments/netlist\_timing/trace\_EDA} \\
-RTL timing & \texttt{rtl\_timing\_v1} / default timing target & recorded split (\texttt{0a78e32b\ldots 5e0c}) & MAPE $\downarrow$ & 30 & 37; \texttt{experiments/rtl\_timing/trace\_EDA} \\
+HLS resource & \texttt{cdfg\_cp\_binary} / CP & \texttt{ogbg\_\allowbreak{}hls\_\allowbreak{}official\_\allowbreak{}split} (\texttt{b6fcaf1a\ldots\allowbreak{}14104c}) & MAPE $\downarrow$ & 30 & 50; \texttt{experiments/\allowbreak{}hls\_\allowbreak{}resource/\allowbreak{}cp\_\allowbreak{}EDA} \\
+Netlist timing & \texttt{timing\_8\_rat} / arrival, net delay, cell delay, slew & recorded split (\texttt{4d6f7f50\ldots\allowbreak{}fe928}) & mean per-target $R^2$ $\uparrow$ & 1500 & 21; \texttt{experiments/\allowbreak{}netlist\_\allowbreak{}timing/\allowbreak{}trace\_\allowbreak{}EDA} \\
+RTL timing & \texttt{rtl\_timing\_v1} / default timing target & recorded split (\texttt{0a78e32b\ldots\allowbreak{}5e0c}) & MAPE $\downarrow$ & 30 & 37; \texttt{experiments/\allowbreak{}rtl\_\allowbreak{}timing/\allowbreak{}trace\_\allowbreak{}EDA} \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table*}
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \caption{Locations of task-specific fixed-space NAS configurations in the accompanying code artifact.}
 \label{tab:nas_configs}
 \small
-\begin{tabular}{lll}
+\begin{tabularx}{\textwidth}{@{}l l >{\raggedright\arraybackslash}X@{}}
 \toprule
 \textbf{Task} & \textbf{Validation trials} & \textbf{Configuration source} \\
 \midrule
-HLS CP & 19 + 1 final test & \texttt{train\_optuna\_mape\_baseline.py} \\
-Netlist timing & 29 + 1 final test & \texttt{train\_optuna\_mean\_r2\_baseline.py} \\
-RTL timing & 19 + 1 final test & \texttt{train\_optuna\_mape\_baseline.py} \\
+HLS CP & 19 + 1 final test & \texttt{train\_\allowbreak{}optuna\_\allowbreak{}mape\_\allowbreak{}baseline.py} \\
+Netlist timing & 29 + 1 final test & \texttt{train\_\allowbreak{}optuna\_\allowbreak{}mean\_\allowbreak{}r2\_\allowbreak{}baseline.py} \\
+RTL timing & 19 + 1 final test & \texttt{train\_\allowbreak{}optuna\_\allowbreak{}mape\_\allowbreak{}baseline.py} \\
 \bottomrule
-\end{tabular}
-\end{table}
+\end{tabularx}
+\end{table*}
 
 The HLS and RTL NAS searches use 20 total training runs, while the Netlist NAS search uses 30. Search trials observe validation metrics only. The single terminal evaluation of the validation-selected NAS winner uses the held-out test split and is not fed back into search.
 

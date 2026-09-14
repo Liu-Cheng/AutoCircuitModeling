@@ -1,7 +1,7 @@
 \section{Experiments}
 \label{exp}
 
-We evaluate \sysname as an AutoResearch framework for EDA graph prediction. The evaluation asks whether HEDGE discovers EDA-native mechanisms outside a fixed search space, whether these mechanisms improve prediction under a controlled comparison, and whether Candidate Review, trace-local scope, and structured Trace memory make the research process more trustworthy.
+We evaluate \sysname as an AutoResearch framework for EDA graph prediction. The evaluation asks whether CircuitModelPilot discovers EDA-native mechanisms outside a fixed search space, whether these mechanisms improve prediction under a controlled comparison, and whether Candidate Review, trace-local scope, and structured Trace memory make the research process more trustworthy.
 
 \subsection{Experimental Setup}
 \label{sec:exp_setup}
@@ -33,9 +33,9 @@ We compare four conditions under the common task contract.
 
 \noindent\textbf{Fixed-space automated search.} This baseline searches a task-specific, predefined configuration space. It can optimize configurations already present in that space, but cannot introduce a new task representation, propagation mechanism, or learning signal. The verified search-space definitions are released with the experiment manifests.
 
-\noindent\textbf{Naive LLM exploration.} This baseline receives the same task profile, trace-local editable modules, starting model, and pre-specified trace budget as \sysname. It may edit the same graph-pass, model, convolution, and trainer modules, but does not use the hypothesis card, Candidate Review, or structured trace memory and analysis. It therefore isolates the value of HEDGE's research protocol from the general ability of an LLM to modify code.
+\noindent\textbf{Naive LLM exploration.} This baseline receives the same task profile, trace-local editable modules, starting model, and pre-specified trace budget as \sysname. It may edit the same graph-pass, model, convolution, and trainer modules, but does not use the hypothesis card, Candidate Review, or structured trace memory and analysis. It therefore isolates the value of CircuitModelPilot's research protocol from the general ability of an LLM to modify code.
 
-\noindent\textbf{Full HEDGE.} HEDGE uses the same task profile, editable modules, starting model, and matched trace/training budget as Naive LLM exploration, while requiring a Hypothesis Card, unified Candidate Review, trace-local scope validation, and structured Trace memory and analysis.
+\noindent\textbf{Full CircuitModelPilot.} CircuitModelPilot uses the same task profile, editable modules, starting model, and matched trace/training budget as Naive LLM exploration, while requiring a Hypothesis Card, unified Candidate Review, trace-local scope validation, and structured Trace memory and analysis.
 
 All automated methods use the same task-specific starting point, split, metric, loss, and epoch budget within each task. Complete search-space definitions, LLM invocation settings, runtime environments, and per-trace configurations are retained in the code artifact.
 
@@ -53,13 +53,13 @@ For a fixed semantic candidate, task-approved parameter search may optimize trai
 \subsection{Overall Predictive Performance}
 \label{sec:overall_performance}
 
-We evaluate whether validation-selected HEDGE candidates improve predictive performance relative to the human-designed baseline, fixed-space automated search, and Naive LLM exploration under the common protocol above. The comparison reports the task metric and the relative change from the root baseline.
+We evaluate whether validation-selected CircuitModelPilot candidates improve predictive performance relative to the human-designed baseline, fixed-space automated search, and Naive LLM exploration under the common protocol above. The comparison reports the task metric and the relative change from the root baseline.
 
 The table is interpreted at the task level. Any improvement is linked to the supported mechanism and trace evidence described in Section~\ref{sec:mechanism_discovery}; a non-improvement is reported as evidence that the explored directions did not yield a stronger design under the matched budget. The comparison does not assume that one architecture should dominate every EDA task.
 
 % === OVERALL-RESULTS TABLE PLACEHOLDER (Table~\ref{tab:main_results}) ======
 % Task | Metric / split | Human baseline | Fixed-space search | Naive LLM |
-% HEDGE | HEDGE change. Fill only with final held-out reports for
+% CircuitModelPilot | CircuitModelPilot change. Fill only with final held-out reports for
 % validation-selected, frozen candidates.
 
 \subsection{EDA-Native Mechanism Discovery}
@@ -87,7 +87,7 @@ rather than reporting only the final configuration.
 
 \subsubsection{Trace-Guided Discovery Trajectory}
 
-Figure~\ref{fig:rtl_trace_tree} summarizes the trajectory. The root trace
+Table~\ref{tab:rtl_discoveries} summarizes representative outcomes from the trajectory. The root trace
 \texttt{T001} fixes the unchanged domain-default AT-GNN-V8 model under one
 ResearchContext, obtaining a validation MAPE of 12.6611. Its byte-identical
 replicate, \texttt{T005}, obtains 13.4203 under the same split, seed, budget,
@@ -174,7 +174,7 @@ zero-code-delta replicate rather than a newly claimed mechanism.}
 \label{tab:rtl_discoveries}
 \small
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{p{0.8cm}p{0.9cm}p{3.7cm}p{0.8cm}p{2.0cm}p{1.4cm}p{1.8cm}}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.95cm}>{\raggedright\arraybackslash}p{0.9cm}>{\raggedright\arraybackslash}p{3.9cm}>{\raggedright\arraybackslash}p{0.7cm}>{\raggedright\arraybackslash}p{2.1cm}>{\raggedright\arraybackslash}p{1.85cm}>{\raggedright\arraybackslash}X@{}}
 \hline
 Trace & Parent & EDA mechanism or control & Level & Validation evidence & Outcome & Interpretation \\
 \hline
@@ -188,30 +188,30 @@ T014 & T012 & Equal-capacity mean-predecessor control & L2 & 11.5091 & Supported
 T016 & T012 & Dedicated critical-path projection & L2 & 11.9978 & Refuted & Shared message representation is important \\
 T017 & T012 & Register-separated max channel & L2 & 11.0880 & Refuted & Best-epoch gain is below the noise threshold \\
 T018 & T012 & Cell-type-scaled messages & L2 & 10.5892 & Inconclusive & Best configuration; isolated causal effect unresolved \\
-T025/T029/T030 & T018 & Byte-identical terminal-configuration replicates & -- & 10.5593/10.5540/10.5207 & Measurement & Full configuration: $10.556 \pm 0.028$ \\
+T025/\newline T029/\newline T030 & T018 & Byte-identical terminal-configuration replicates & -- & 10.5593/\newline 10.5540/\newline 10.5207 & Measurement & Full configuration: $10.556 \pm 0.028$ \\
 \hline
-\end{tabular}
+\end{tabularx}
 \end{table*}
 
 \subsection{Ablation Study}
 \label{sec:ablation}
 
-\subsubsection{Ablation of HEDGE Protocol Components}
+\subsubsection{Ablation of CircuitModelPilot Protocol Components}
 \label{sec:protocol_ablation}
 
-We next isolate the contribution of the protocol components that make HEDGE a trace-grounded AutoResearch framework. Starting from the full system, we remove one component at a time: (i) the unified Candidate Review, (ii) trace-local scope validation, or (iii) structured Trace memory and analysis. The ablations use the same task context and trace budget as full HEDGE.
+We next isolate the contribution of the protocol components that make CircuitModelPilot a trace-grounded AutoResearch framework. Starting from the full system, we remove one component at a time: (i) the unified Candidate Review, (ii) trace-local scope validation, or (iii) structured Trace memory and analysis. The ablations use the same task context and trace budget as full CircuitModelPilot.
 
 We evaluate these variants with trace-level reliability measures: the rate of grounded proposals, execution success rate, rate of comparable child-parent experiments, detected scope or alignment violations, replay success rate, and the fraction of initially promising candidates that survive confirmation. These results show whether each protocol component improves the quality and interpretability of the exploration process, independently of a final accuracy gain.
 
 % === PROTOCOL-ABLATION RESULT TABLE PLACEHOLDER (Table~\ref{tab:protocol_ablation}) ===
-% Rows: Full HEDGE | w/o Candidate Review | w/o trace-local scope validation |
+% Rows: Full CircuitModelPilot | w/o Candidate Review | w/o trace-local scope validation |
 % w/o structured Trace memory | Naive LLM. Columns: Grounded
 % proposals | Execution success | Comparable traces | Violations | Replay | Confirmed.
 
 \subsubsection{Ablation of Discovered EDA Mechanisms}
 \label{sec:mechanism_ablation}
 
-Protocol ablation explains whether HEDGE explores reliably; it does not explain why a discovered GNN design improves prediction. For each representative supported mechanism, we therefore compare the full design with controlled variants that remove or alter its essential component. For example, a resource-prior reinjection mechanism can be compared with the root GNN, input-only injection, layer-wise injection without gating, and a randomized-prior control. The exact variants are determined by the mechanism under study and must preserve the common training protocol.
+Protocol ablation explains whether CircuitModelPilot explores reliably; it does not explain why a discovered GNN design improves prediction. For each representative supported mechanism, we therefore compare the full design with controlled variants that remove or alter its essential component. For example, a resource-prior reinjection mechanism can be compared with the root GNN, input-only injection, layer-wise injection without gating, and a randomized-prior control. The exact variants are determined by the mechanism under study and must preserve the common training protocol.
 
 This analysis distinguishes a genuine EDA mechanism from an improvement caused merely by additional parameters or an uncontrolled auxiliary feature. We report only mechanism ablations whose variants correspond to explicit, implementation-aligned hypotheses.
 
@@ -223,6 +223,6 @@ This analysis distinguishes a genuine EDA mechanism from an improvement caused m
 \subsection{Discussion and Limitations}
 \label{sec:exp_discussion}
 
-HEDGE constrains exploration within a task interface and trace-local editable scope; it does not claim to autonomously redesign arbitrary EDA flows or infer missing domain semantics without a task profile. The quality of its hypotheses depends on the task profile, domain adapter, diagnostics, and generated templates supplied for the task. Candidate Review is role-separated from proposal generation, but this separation does not constitute a statistically independent, multi-model blind review. Semantic grounding does not guarantee that a hypothesis is correct; it requires that the hypothesis be testable and traceable.
+CircuitModelPilot constrains exploration within a task interface and trace-local editable scope; it does not claim to autonomously redesign arbitrary EDA flows or infer missing domain semantics without a task profile. The quality of its hypotheses depends on the task profile, domain adapter, diagnostics, and generated templates supplied for the task. Candidate Review is role-separated from proposal generation, but this separation does not constitute a statistically independent, multi-model blind review. Semantic grounding does not guarantee that a hypothesis is correct; it requires that the hypothesis be testable and traceable.
 
 The framework also does not eliminate ordinary sources of experimental variance. Small data regimes, stochastic training, incomplete parameter search, and task-specific implementation constraints can make a promising trace unstable. We therefore report negative and inconclusive outcomes, apply configured confirmation procedures, and avoid interpreting an isolated gain as a general conclusion. Cross-task generality refers to the common trace-based protocol; the useful semantic mechanisms remain task-dependent.

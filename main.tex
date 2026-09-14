@@ -1,9 +1,10 @@
-\documentclass[lettersize,journal]{IEEEtran}
+% IEEE TCAD submission format: two-column IEEE journal, 10 pt, US letter.
+\documentclass[10pt,journal,letterpaper]{IEEEtran}
 \usepackage{amsmath,amsfonts}
 \usepackage{algorithmic}
 \usepackage{algorithm}
 \usepackage{array}
-\usepackage[caption=false,font=footnotesize,labelfont=sf,textfont=sf]{subfig}
+\usepackage[caption=false,font=footnotesize]{subfig}
 \usepackage{textcomp}
 \usepackage{stfloats}
 \usepackage{url}
@@ -13,36 +14,24 @@
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{makecell}
-\usepackage{arydshln}
 \usepackage{xspace}
 \usepackage{xcolor}
-% Framework name
-
-
-\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
-% updated with editorial comments 8/9/2021
-
-\newcommand{\sysname}{\textsc{HEDGE}\xspace}
+\newcommand{\sysname}{CircuitModelPilot\xspace}
 
 \begin{document}
 
 \title{CircuitModelPilot: An Agentic Framework for Automated Circuit Modeling across AI4EDA Tasks}
 
-\author{todo, 
-        todo, ~\IEEEmembership{Member,~IEEE,} 
-        
-\thanks{All authors are with the State Key Lab of Processors, Institute of Computing Technology, Chinese Academy of Sciences (CAS), Beijing, China. XXX, XXX, XXX, XXX, and XXX are also with the University of Chinese Academy of Sciences, Beijing, China.}
-}
+\author{Yongxun Liu, Bin Sun, Jianan Mu, Cheng Liu, and Huawei Li%
+\thanks{Yongxun Liu is with the Hangzhou Institute for Advanced Study, University of Chinese Academy of Sciences, Hangzhou, China, and the University of Chinese Academy of Sciences, Beijing, China. He is also a research intern with the Institute of Computing Technology, Chinese Academy of Sciences, Beijing, China.}%
+\thanks{Bin Sun, Jianan Mu, and Huawei Li are with the Institute of Computing Technology, Chinese Academy of Sciences, Beijing, China, and the University of Chinese Academy of Sciences, Beijing, China.}%
+\thanks{Cheng Liu is with North China Electric Power University, China. \textit{Corresponding author: Cheng Liu.}}}
 
 
 
-% The paper headers
-\markboth{Journal of \LaTeX\ Class Files,~Vol.~14, No.~8, August~2021}%
-{Shell \MakeLowercase{\textit{et al.}}: A Sample Article Using IEEEtran.cls for IEEE Journals}
+\markboth{IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems}%
+{Liu \MakeLowercase{\textit{et al.}}: CircuitModelPilot: Automated Circuit Modeling across AI4EDA Tasks}
 
-
-% Remember, if you use this you must call \IEEEpubidadjcol in the second
-% column for its text to clear the IEEEpubid mark.
 
 \maketitle
 
@@ -53,7 +42,7 @@
 
 
 \begin{IEEEkeywords}
-Electronic Design Automation (EDA), Graph Neural Networks (GNNs), Automated Research, LLM Agents
+Automated circuit modeling, electronic design automation (EDA), graph neural networks (GNNs), large language model (LLM) agents, model design search.
 \end{IEEEkeywords}
 
 \input{docs/Introduction}
@@ -64,8 +53,8 @@ Electronic Design Automation (EDA), Graph Neural Networks (GNNs), Automated Rese
 \input{docs/Reproducibility}
 
 
-% \section*{Acknowledgments}
-% The authors used Google Gemini 3.1 Pro to polish the manuscript's text, and GPT-5 for code completion and debugging suggestions. All core ideas, methodologies, and scientific conclusions are entirely the original work of the authors, who have thoroughly reviewed all AI-assisted outputs and take full responsibility for the final content.
+\section*{Acknowledgment}
+OpenAI Codex was used to assist with reorganizing and polishing the title, abstract, Introduction, Related Work, and framework description, and with generating the framework diagram and editing the \LaTeX{} formatting.
 
 \bibliographystyle{IEEEtran}
 % \balance
